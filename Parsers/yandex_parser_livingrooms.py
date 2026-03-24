@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Yandex Maps Parser - Fixed Power BI Edition
-Correctly parses overall rating and review count
+Yandex Maps Parser - Accommodation Edition with City Filtering
+Filters results by actual city location
 """
 
 import time
@@ -21,8 +21,28 @@ import random
 
 # ==================== CONFIGURATION ====================
 CITY = "Байкальск"
-CATEGORIES = ["рестораны", "кафе", "столовые", "кофейни", "позные", "суши", "пицца" "фастфуд"]
-OUTPUT_FILE = "yandex_data_food.json"
+# Примерные координаты города Байкальск (центр города)
+# Можно уточнить координаты для более точной фильтрации
+CITY_COORDINATES = {
+    "latitude": 51.517,  # Широта центра Байкальска
+    "longitude": 104.120,  # Долгота центра Байкальска
+    "radius_km": 15  # Радиус поиска в километрах
+}
+
+CATEGORIES = [
+    "гостиница с баней",
+    "кемпинг",
+    "гостиницы",
+    "хостелы",
+    "гостевые дома",
+    "гостиничный комплекс",
+    "база отдыха",
+    "турбаза",
+    "пансионат",
+    "санаторий",
+    "отели"
+]
+OUTPUT_FILE = "yandex_maps_accommodation_filtered.json"
 HEADLESS = False
 MAX_BUSINESSES = 100
 
@@ -30,7 +50,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 
-class YandexFixedParser:
+class YandexAccommodationParser:
     def __init__(self, city: str, categories: List[str], headless: bool = False):
         self.city = city
         self.categories = categories
@@ -38,6 +58,15 @@ class YandexFixedParser:
         self.driver = None
         self.all_businesses = []
         self.seen_ids = set()
+
+        # Список городов, которые нужно исключить
+        self.excluded_cities = ["Иркутск", "Ангарск", "Шелехов", "Усолье-Сибирское"]
+
+        # Словарь с ключевыми словами для фильтрации названий
+        self.excluded_keywords = ["офис", "представительство", "агентство", "бронирование"]
+
+        # Радиус поиска в градусах (примерно 0.01 градуса ≈ 1.1 км)
+        self.radius_degrees = CITY_COORDINATES["radius_km"] / 111.0
 
     def setup_driver(self):
         options = webdriver.ChromeOptions()
@@ -84,15 +113,49 @@ class YandexFixedParser:
         match = re.search(r'/org/([^/?]+)', url)
         return match.group(1) if match else None
 
+    def is_in_city_radius(self, lat: float, lon: float) -> bool:
+        """Проверяет, находится ли точка в радиусе от центра города"""
+        if lat is None or lon is None:
+            return False
+
+        # Простая проверка по дельте координат
+        lat_diff = abs(lat - CITY_COORDINATES["latitude"])
+        lon_diff = abs(lon - CITY_COORDINATES["longitude"])
+
+        return lat_diff <= self.radius_degrees and lon_diff <= self.radius_degrees
+
+    def is_valid_business(self, name: str, address: str, lat: float, lon: float) -> bool:
+        """Проверяет, является ли объект валидным для данного города"""
+
+        # Проверка по названию на исключенные города
+        for excluded_city in self.excluded_cities:
+            if excluded_city in name or (address and excluded_city in address):
+                logger.debug(f"  Excluded by city name: {name} contains {excluded_city}")
+                return False
+
+        # Проверка по ключевым словам
+        for keyword in self.excluded_keywords:
+            if keyword.lower() in name.lower():
+                logger.debug(f"  Excluded by keyword: {name} contains {keyword}")
+                return False
+
+        # Проверка по координатам
+        if lat is not None and lon is not None:
+            in_radius = self.is_in_city_radius(lat, lon)
+            if not in_radius:
+                logger.debug(f"  Excluded by coordinates: {name} at [{lat:.4f}, {lon:.4f}] is outside radius")
+                return False
+
+        return True
+
     def parse_overall_rating_and_count(self, soup) -> Tuple[Optional[float], Optional[int]]:
-        """Parse overall rating and number of ratings - COMBINED APPROACH"""
+        """Parse overall rating and number of ratings"""
         overall_rating = None
         ratings_count = None
 
-        # Method 1: Get rating from aria-label attribute (most reliable)
+        # Method 1: Get rating from aria-label attribute
         rating_element = soup.find('div', {'aria-label': re.compile(r'Оценка \d+[,.]\d+ из 5')})
         if not rating_element:
-            # Try with different selector
             rating_element = soup.find('div', {'aria-label': re.compile(r'\d+[,.]\d+')})
 
         if rating_element:
@@ -105,7 +168,7 @@ class YandexFixedParser:
                 except:
                     pass
 
-        # Method 2: Get count from elements with aria-label containing "оценк"
+        # Method 2: Get count from elements with aria-label
         count_elements = soup.find_all(attrs={'aria-label': re.compile(r'\d+\s*оценк')})
         for elem in count_elements:
             aria_label = elem.get('aria-label', '')
@@ -117,7 +180,7 @@ class YandexFixedParser:
                 except:
                     pass
 
-        # Method 3: Alternative - find count in span with text containing "оценок"
+        # Method 3: Alternative - find count in span with text
         if ratings_count is None:
             all_spans = soup.find_all(['span', 'div'], text=re.compile(r'\d+\s*оценок'))
             for span in all_spans:
@@ -130,7 +193,7 @@ class YandexFixedParser:
                     except:
                         pass
 
-        # Method 4: Get rating from visible text if not found via aria-label
+        # Method 4: Get rating from visible text
         if overall_rating is None:
             rating_text_elem = soup.find('span', class_=re.compile(r'business-rating-badge-view__rating-text'))
             if not rating_text_elem:
@@ -138,19 +201,16 @@ class YandexFixedParser:
 
             if rating_text_elem:
                 text = rating_text_elem.get_text(strip=True)
-                # Extract just the rating (first number with decimal)
                 match = re.search(r'(\d+)[,.](\d+)', text)
                 if match:
                     try:
                         rating_str = f"{match.group(1)}.{match.group(2)}"
-                        # If there are more than 2 digits after decimal, take only first
                         if len(match.group(2)) > 2:
                             rating_str = f"{match.group(1)}.{match.group(2)[0]}"
                         overall_rating = float(rating_str)
                     except:
                         pass
 
-                # If we still don't have count, try to extract from same text
                 if ratings_count is None:
                     count_match = re.search(r'(\d+)\s*оценок', text)
                     if count_match:
@@ -159,23 +219,22 @@ class YandexFixedParser:
                         except:
                             pass
 
-        # Method 5: Final fallback - search entire page text
+        # Method 5: Final fallback
         if ratings_count is None:
             page_text = soup.get_text()
-            # Look for patterns like "23 оценки" or "119 оценок"
             count_match = re.search(r'(\d+)\s*(?:оценок|оценки|оценка)', page_text)
             if count_match:
                 try:
                     potential_count = int(count_match.group(1))
-                    # Sanity check: count should be reasonable (not too large)
                     if potential_count < 100000:
                         ratings_count = potential_count
                 except:
                     pass
 
         return overall_rating, ratings_count
+
     def parse_percent_ratings(self, soup) -> Dict[str, int]:
-        """Parse percentage ratings from carousel items"""
+        """Parse percentage ratings for accommodation-specific aspects"""
         ratings = {}
 
         # Find all carousel items
@@ -193,43 +252,25 @@ class YandexFixedParser:
                 if match:
                     percent = int(match.group(1))
 
-                    if 'Еда' in category or 'Кухня' in category:
-                        ratings['food_percent'] = percent
+                    # Accommodation-specific aspects
+                    if 'Чистота' in category:
+                        ratings['cleanliness_percent'] = percent
                     elif 'Обслуживание' in category or 'Персонал' in category or 'Сервис' in category:
                         ratings['service_percent'] = percent
-                    elif 'Атмосфера' in category:
-                        ratings['atmosphere_percent'] = percent
-                    elif 'Интерьер' in category:
-                        ratings['interior_percent'] = percent
-                    elif 'Чистота' in category:
-                        ratings['cleanliness_percent'] = percent
-                    elif 'Цены' in category or 'Соотношение' in category:
+                    elif 'Комфорт' in category:
+                        ratings['comfort_percent'] = percent
+                    elif 'Расположение' in category:
+                        ratings['location_percent'] = percent
+                    elif 'Цены' in category or 'Соотношение цена/качество' in category:
                         ratings['price_percent'] = percent
-
-        # Alternative: direct business-aspect-view elements
-        if not ratings:
-            aspect_items = soup.find_all('div', class_=re.compile(r'business-aspect-view'))
-
-            for item in aspect_items:
-                text_elem = item.find('div', class_=re.compile(r'business-aspect-view__text'))
-                rating_elem = item.find('span', class_=re.compile(r'business-aspect-view__rating'))
-
-                if text_elem and rating_elem:
-                    category = text_elem.get_text(strip=True).strip('"')
-                    rating_text = rating_elem.get_text(strip=True)
-
-                    match = re.search(r'(\d+)%', rating_text)
-                    if match:
-                        percent = int(match.group(1))
-
-                        if 'Еда' in category:
-                            ratings['food_percent'] = percent
-                        elif 'Обслуживание' in category or 'Персонал' in category:
-                            ratings['service_percent'] = percent
-                        elif 'Атмосфера' in category:
-                            ratings['atmosphere_percent'] = percent
-                        elif 'Чистота' in category:
-                            ratings['cleanliness_percent'] = percent
+                    elif 'Удобства' in category:
+                        ratings['amenities_percent'] = percent
+                    elif 'Номер' in category:
+                        ratings['room_percent'] = percent
+                    elif 'Завтрак' in category:
+                        ratings['breakfast_percent'] = percent
+                    elif 'Wi-Fi' in category:
+                        ratings['wifi_percent'] = percent
 
         return ratings
 
@@ -264,14 +305,19 @@ class YandexFixedParser:
                 address = address.split('этаж')[0].strip()
                 address = address.split('•')[0].strip()
 
-            # Parse overall rating and count - FIXED
+            # Get coordinates
+            coords = self.extract_coords(self.driver.current_url)
+
+            # Проверяем, является ли объект валидным для нашего города
+            if not self.is_valid_business(name, address, coords[0] if coords else None, coords[1] if coords else None):
+                logger.info(f"    ✗ Skipped (not in {self.city}): {name}")
+                return None
+
+            # Parse overall rating and count
             overall_rating, ratings_count = self.parse_overall_rating_and_count(soup)
 
             # Parse percentage ratings
             percent_ratings = self.parse_percent_ratings(soup)
-
-            # Get coordinates
-            coords = self.extract_coords(self.driver.current_url)
 
             business = {
                 'id': org_id,
@@ -280,12 +326,15 @@ class YandexFixedParser:
                 'category': category,
                 'overall_rating': overall_rating,
                 'ratings_count': ratings_count,
-                'food_percent': percent_ratings.get('food_percent'),
-                'service_percent': percent_ratings.get('service_percent'),
-                'atmosphere_percent': percent_ratings.get('atmosphere_percent'),
-                'interior_percent': percent_ratings.get('interior_percent'),
                 'cleanliness_percent': percent_ratings.get('cleanliness_percent'),
+                'service_percent': percent_ratings.get('service_percent'),
+                'comfort_percent': percent_ratings.get('comfort_percent'),
+                'location_percent': percent_ratings.get('location_percent'),
                 'price_percent': percent_ratings.get('price_percent'),
+                'amenities_percent': percent_ratings.get('amenities_percent'),
+                'room_percent': percent_ratings.get('room_percent'),
+                'breakfast_percent': percent_ratings.get('breakfast_percent'),
+                'wifi_percent': percent_ratings.get('wifi_percent'),
                 'url': url,
                 'latitude': coords[0] if coords else None,
                 'longitude': coords[1] if coords else None,
@@ -300,6 +349,7 @@ class YandexFixedParser:
             return None
 
     def search_and_collect_urls(self, category: str) -> List[str]:
+        # Добавляем город в запрос для более точного поиска
         query = f"{self.city} {category}"
         logger.info(f"Searching: {query}")
 
@@ -409,10 +459,10 @@ class YandexFixedParser:
                                 info.append(f"⭐{business['overall_rating']}")
                             if business.get('ratings_count'):
                                 info.append(f"({business['ratings_count']} оценок)")
-                            if business.get('food_percent'):
-                                info.append(f"🍽️{business['food_percent']}%")
+                            if business.get('cleanliness_percent'):
+                                info.append(f"🧹{business['cleanliness_percent']}%")
                             if business.get('service_percent'):
-                                info.append(f"👨‍🍳{business['service_percent']}%")
+                                info.append(f"👨‍💼{business['service_percent']}%")
 
                             logger.info(
                                 f"    ✓ {business['name']}{coords_str} | {' '.join(info) if info else 'no ratings'}")
@@ -429,6 +479,7 @@ class YandexFixedParser:
             output = {
                 "metadata": {
                     "city": self.city,
+                    "city_coordinates": CITY_COORDINATES,
                     "categories": self.categories,
                     "total_businesses": len(self.all_businesses),
                     "parsed_at": datetime.now().isoformat()
@@ -443,28 +494,25 @@ class YandexFixedParser:
             with_coords = sum(1 for b in self.all_businesses if b['latitude'])
             with_overall = sum(1 for b in self.all_businesses if b.get('overall_rating'))
             with_count = sum(1 for b in self.all_businesses if b.get('ratings_count'))
-            with_food = sum(1 for b in self.all_businesses if b.get('food_percent'))
 
             print("\n" + "=" * 70)
-            print("RESULTS FOR POWER BI")
+            print(f"ACCOMMODATION DATA FOR {CITY.upper()}")
             print("=" * 70)
-            print(f"Businesses: {len(self.all_businesses)}")
+            print(f"Accommodation places: {len(self.all_businesses)}")
             print(f"With coordinates: {with_coords}")
             print(f"With overall rating: {with_overall}")
             print(f"With ratings count: {with_count}")
-            print(f"With food percent: {with_food}")
             print(f"\nOutput: {OUTPUT_FILE}")
 
             if self.all_businesses:
-                print("\n🏪 Sample businesses:")
+                print(f"\n🏨 Sample accommodation places in {self.city}:")
                 for b in self.all_businesses[:5]:
                     print(f"\n  • {b['name']} ({b['category']})")
                     if b.get('overall_rating'):
                         print(f"    ⭐ Общий рейтинг: {b['overall_rating']} ({b.get('ratings_count', '?')} оценок)")
-                    if b.get('food_percent'): print(f"    🍽️ Еда: {b['food_percent']}%")
-                    if b.get('service_percent'): print(f"    👨‍🍳 Обслуживание: {b['service_percent']}%")
-                    if b.get('atmosphere_percent'): print(f"    🎭 Атмосфера: {b['atmosphere_percent']}%")
                     if b.get('cleanliness_percent'): print(f"    🧹 Чистота: {b['cleanliness_percent']}%")
+                    if b.get('service_percent'): print(f"    👨‍💼 Обслуживание: {b['service_percent']}%")
+                    if b.get('location_percent'): print(f"    📍 Расположение: {b['location_percent']}%")
                     if b.get('latitude'): print(f"    🗺️ {b['latitude']:.6f}, {b['longitude']:.6f}")
 
             print("\n" + "=" * 70)
@@ -480,14 +528,16 @@ class YandexFixedParser:
 
 if __name__ == "__main__":
     print("=" * 70)
-    print("Yandex Maps Parser - Fixed Power BI Edition")
+    print(f"Yandex Maps Parser - Accommodation Edition for {CITY}")
     print("=" * 70)
     print(f"City: {CITY}")
+    print(f"City center coordinates: {CITY_COORDINATES['latitude']}, {CITY_COORDINATES['longitude']}")
+    print(f"Search radius: {CITY_COORDINATES['radius_km']} km")
     print(f"Categories: {', '.join(CATEGORIES)}")
-    print(f"Max businesses: {MAX_BUSINESSES}")
+    print(f"Max accommodation places: {MAX_BUSINESSES}")
     print("=" * 70)
 
-    parser = YandexFixedParser(CITY, CATEGORIES, HEADLESS)
+    parser = YandexAccommodationParser(CITY, CATEGORIES, HEADLESS)
     parser.run()
 
-    print("\n✅ Done! Ready for Power BI.")
+    print(f"\n✅ Done! Only {CITY} accommodations saved.")

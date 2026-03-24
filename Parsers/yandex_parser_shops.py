@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Yandex Maps Parser - Fixed Power BI Edition
-Correctly parses overall rating and review count
+Yandex Maps Parser - Stores Edition
+Parses stores data: name, location, rating, and 24/7 status
 """
 
 import time
@@ -21,23 +21,24 @@ import random
 
 # ==================== CONFIGURATION ====================
 CITY = "Байкальск"
-CATEGORIES = ["рестораны", "кафе", "столовые", "кофейни", "позные", "суши", "пицца" "фастфуд"]
-OUTPUT_FILE = "yandex_data_food.json"
+CATEGORIES = ["супермаркеты", "торговые центры", "аптеки", "магазины",  "продуктовые магазины"]
+OUTPUT_FILE = "yandex_maps_stores.json"
 HEADLESS = False
-MAX_BUSINESSES = 100
+MAX_BUSINESSES = 200  # Increased to collect more
+SCROLL_ATTEMPTS = 30  # Increased scroll attempts
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 
-class YandexFixedParser:
+class YandexStoresParser:
     def __init__(self, city: str, categories: List[str], headless: bool = False):
         self.city = city
         self.categories = categories
         self.headless = headless
         self.driver = None
         self.all_businesses = []
-        self.seen_ids = set()
+        self.seen_ids = set()  # Still used to prevent duplicates across all categories
 
     def setup_driver(self):
         options = webdriver.ChromeOptions()
@@ -48,6 +49,7 @@ class YandexFixedParser:
         options.add_experimental_option('useAutomationExtension', False)
         options.add_argument('--window-size=1920,1080')
         options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')
+        options.add_argument('--lang=ru')
 
         self.driver = webdriver.Chrome(options=options)
         logger.info("Driver initialized")
@@ -61,7 +63,7 @@ class YandexFixedParser:
         name = re.sub(r'Закрыто.*$', '', name)
         name = name.split('\n')[0].strip()
         name = re.sub(r'\s+', ' ', name)
-        return name[:80]
+        return name[:100]
 
     def extract_coords(self, url: str) -> Optional[Tuple[float, float]]:
         match = re.search(r'/@([\d.-]+),([\d.-]+),\d+z', url)
@@ -85,14 +87,13 @@ class YandexFixedParser:
         return match.group(1) if match else None
 
     def parse_overall_rating_and_count(self, soup) -> Tuple[Optional[float], Optional[int]]:
-        """Parse overall rating and number of ratings - COMBINED APPROACH"""
+        """Parse overall rating and number of ratings"""
         overall_rating = None
         ratings_count = None
 
-        # Method 1: Get rating from aria-label attribute (most reliable)
+        # Method 1: Get rating from aria-label attribute
         rating_element = soup.find('div', {'aria-label': re.compile(r'Оценка \d+[,.]\d+ из 5')})
         if not rating_element:
-            # Try with different selector
             rating_element = soup.find('div', {'aria-label': re.compile(r'\d+[,.]\d+')})
 
         if rating_element:
@@ -105,7 +106,7 @@ class YandexFixedParser:
                 except:
                     pass
 
-        # Method 2: Get count from elements with aria-label containing "оценк"
+        # Method 2: Get count from elements with aria-label
         count_elements = soup.find_all(attrs={'aria-label': re.compile(r'\d+\s*оценк')})
         for elem in count_elements:
             aria_label = elem.get('aria-label', '')
@@ -117,9 +118,9 @@ class YandexFixedParser:
                 except:
                     pass
 
-        # Method 3: Alternative - find count in span with text containing "оценок"
+        # Method 3: Find count in span with text
         if ratings_count is None:
-            all_spans = soup.find_all(['span', 'div'], text=re.compile(r'\d+\s*оценок'))
+            all_spans = soup.find_all(['span', 'div'], string=re.compile(r'\d+\s*оценок'))
             for span in all_spans:
                 text = span.get_text(strip=True)
                 match = re.search(r'(\d+)\s*оценок', text)
@@ -130,7 +131,7 @@ class YandexFixedParser:
                     except:
                         pass
 
-        # Method 4: Get rating from visible text if not found via aria-label
+        # Method 4: Get rating from visible text
         if overall_rating is None:
             rating_text_elem = soup.find('span', class_=re.compile(r'business-rating-badge-view__rating-text'))
             if not rating_text_elem:
@@ -138,19 +139,16 @@ class YandexFixedParser:
 
             if rating_text_elem:
                 text = rating_text_elem.get_text(strip=True)
-                # Extract just the rating (first number with decimal)
                 match = re.search(r'(\d+)[,.](\d+)', text)
                 if match:
                     try:
                         rating_str = f"{match.group(1)}.{match.group(2)}"
-                        # If there are more than 2 digits after decimal, take only first
                         if len(match.group(2)) > 2:
                             rating_str = f"{match.group(1)}.{match.group(2)[0]}"
                         overall_rating = float(rating_str)
                     except:
                         pass
 
-                # If we still don't have count, try to extract from same text
                 if ratings_count is None:
                     count_match = re.search(r'(\d+)\s*оценок', text)
                     if count_match:
@@ -159,90 +157,65 @@ class YandexFixedParser:
                         except:
                             pass
 
-        # Method 5: Final fallback - search entire page text
+        # Method 5: Final fallback
         if ratings_count is None:
             page_text = soup.get_text()
-            # Look for patterns like "23 оценки" or "119 оценок"
             count_match = re.search(r'(\d+)\s*(?:оценок|оценки|оценка)', page_text)
             if count_match:
                 try:
                     potential_count = int(count_match.group(1))
-                    # Sanity check: count should be reasonable (not too large)
                     if potential_count < 100000:
                         ratings_count = potential_count
                 except:
                     pass
 
         return overall_rating, ratings_count
-    def parse_percent_ratings(self, soup) -> Dict[str, int]:
-        """Parse percentage ratings from carousel items"""
-        ratings = {}
 
-        # Find all carousel items
-        carousel_items = soup.find_all('div', class_=re.compile(r'carousel__item'))
+    def parse_24_7_status(self, soup) -> Dict[str, any]:
+        """Parse if the store is open 24/7"""
+        result = {
+            'is_24_7': False,
+            'working_hours_raw': None
+        }
 
-        for item in carousel_items:
-            text_elem = item.find('div', class_=re.compile(r'business-aspect-view__text'))
-            rating_elem = item.find('span', class_=re.compile(r'business-aspect-view__rating'))
+        # Find working hours
+        hours_elem = soup.find('div', class_=re.compile(r'business-hours-view__hours'))
+        if hours_elem:
+            hours_text = hours_elem.get_text(strip=True)
+            result['working_hours_raw'] = hours_text
 
-            if text_elem and rating_elem:
-                category = text_elem.get_text(strip=True).strip('"')
-                rating_text = rating_elem.get_text(strip=True)
+            # Check for 24/7 indicators
+            if hours_text:
+                hours_lower = hours_text.lower()
+                if ('24' in hours_text and '7' in hours_text) or \
+                        ('круглосуточно' in hours_lower) or \
+                        ('ежедневно' in hours_lower and '00:00' in hours_text) or \
+                        ('пн-вс' in hours_lower and '00:00' in hours_text):
+                    result['is_24_7'] = True
 
-                match = re.search(r'(\d+)%', rating_text)
-                if match:
-                    percent = int(match.group(1))
+        # Also check status
+        status_elem = soup.find('div', class_=re.compile(r'business-hours-view__state'))
+        if status_elem:
+            status_text = status_elem.get_text(strip=True)
+            if status_text and 'круглосуточно' in status_text.lower():
+                result['is_24_7'] = True
 
-                    if 'Еда' in category or 'Кухня' in category:
-                        ratings['food_percent'] = percent
-                    elif 'Обслуживание' in category or 'Персонал' in category or 'Сервис' in category:
-                        ratings['service_percent'] = percent
-                    elif 'Атмосфера' in category:
-                        ratings['atmosphere_percent'] = percent
-                    elif 'Интерьер' in category:
-                        ratings['interior_percent'] = percent
-                    elif 'Чистота' in category:
-                        ratings['cleanliness_percent'] = percent
-                    elif 'Цены' in category or 'Соотношение' in category:
-                        ratings['price_percent'] = percent
-
-        # Alternative: direct business-aspect-view elements
-        if not ratings:
-            aspect_items = soup.find_all('div', class_=re.compile(r'business-aspect-view'))
-
-            for item in aspect_items:
-                text_elem = item.find('div', class_=re.compile(r'business-aspect-view__text'))
-                rating_elem = item.find('span', class_=re.compile(r'business-aspect-view__rating'))
-
-                if text_elem and rating_elem:
-                    category = text_elem.get_text(strip=True).strip('"')
-                    rating_text = rating_elem.get_text(strip=True)
-
-                    match = re.search(r'(\d+)%', rating_text)
-                    if match:
-                        percent = int(match.group(1))
-
-                        if 'Еда' in category:
-                            ratings['food_percent'] = percent
-                        elif 'Обслуживание' in category or 'Персонал' in category:
-                            ratings['service_percent'] = percent
-                        elif 'Атмосфера' in category:
-                            ratings['atmosphere_percent'] = percent
-                        elif 'Чистота' in category:
-                            ratings['cleanliness_percent'] = percent
-
-        return ratings
+        return result
 
     def parse_business_page(self, url: str, category: str) -> Optional[Dict]:
         org_id = self.get_org_id(url)
 
-        if not org_id or org_id in self.seen_ids:
+        if not org_id:
+            return None
+
+        # Skip if already collected from any category
+        if org_id in self.seen_ids:
             return None
 
         try:
-            logger.info(f"  Loading: {org_id[:30]}")
+            logger.info(f"  Loading store: {org_id[:50]}")
             self.driver.get(url)
-            time.sleep(3)
+            time.sleep(random.uniform(2, 3))
 
             soup = BeautifulSoup(self.driver.page_source, 'html.parser')
 
@@ -264,11 +237,11 @@ class YandexFixedParser:
                 address = address.split('этаж')[0].strip()
                 address = address.split('•')[0].strip()
 
-            # Parse overall rating and count - FIXED
+            # Parse rating and count
             overall_rating, ratings_count = self.parse_overall_rating_and_count(soup)
 
-            # Parse percentage ratings
-            percent_ratings = self.parse_percent_ratings(soup)
+            # Parse 24/7 status
+            hours_info = self.parse_24_7_status(soup)
 
             # Get coordinates
             coords = self.extract_coords(self.driver.current_url)
@@ -280,12 +253,8 @@ class YandexFixedParser:
                 'category': category,
                 'overall_rating': overall_rating,
                 'ratings_count': ratings_count,
-                'food_percent': percent_ratings.get('food_percent'),
-                'service_percent': percent_ratings.get('service_percent'),
-                'atmosphere_percent': percent_ratings.get('atmosphere_percent'),
-                'interior_percent': percent_ratings.get('interior_percent'),
-                'cleanliness_percent': percent_ratings.get('cleanliness_percent'),
-                'price_percent': percent_ratings.get('price_percent'),
+                'is_24_7': hours_info['is_24_7'],
+                'working_hours': hours_info['working_hours_raw'],
                 'url': url,
                 'latitude': coords[0] if coords else None,
                 'longitude': coords[1] if coords else None,
@@ -300,13 +269,14 @@ class YandexFixedParser:
             return None
 
     def search_and_collect_urls(self, category: str) -> List[str]:
+        """Collect unique URLs for a category"""
         query = f"{self.city} {category}"
         logger.info(f"Searching: {query}")
 
         self.driver.get("https://yandex.ru/maps/")
-        time.sleep(2)
+        time.sleep(3)
 
-        # Accept cookies
+        # Accept cookies if present
         try:
             accept_btn = self.driver.find_element(By.XPATH, "//button[contains(text(), 'Согласен')]")
             accept_btn.click()
@@ -315,37 +285,45 @@ class YandexFixedParser:
             pass
 
         # Search
-        search_input = WebDriverWait(self.driver, 10).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, "input[placeholder*='Поиск']"))
-        )
-        search_input.clear()
-        search_input.send_keys(query)
-        search_input.send_keys(Keys.RETURN)
-        time.sleep(4)
+        try:
+            search_input = WebDriverWait(self.driver, 10).until(
+                EC.presence_of_element_located(
+                    (By.CSS_SELECTOR, "input[placeholder*='Поиск'], input[placeholder*='Найти']"))
+            )
+            search_input.clear()
+            search_input.send_keys(query)
+            search_input.send_keys(Keys.RETURN)
+            time.sleep(5)
+        except Exception as e:
+            logger.error(f"Search failed: {e}")
+            return []
 
-        unique_ids = set()
-        urls_by_id = {}
+        unique_urls = []
+        seen_in_category = set()
 
         scroll_count = 0
         no_new_count = 0
 
-        while len(unique_ids) < MAX_BUSINESSES and scroll_count < 15 and no_new_count < 5:
+        while scroll_count < SCROLL_ATTEMPTS and no_new_count < 8:
+            # Scroll down
             self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
             time.sleep(2)
 
+            # Try to click "Show more" button
             try:
                 show_more = self.driver.find_element(By.XPATH, "//button[contains(text(), 'Показать еще')]")
                 show_more.click()
-                time.sleep(1)
+                time.sleep(1.5)
             except:
                 pass
 
+            # Extract all organization links
             links = self.driver.execute_script("""
                 var links = document.querySelectorAll('a[href*="/org/"]');
                 var result = [];
                 for (var i = 0; i < links.length; i++) {
                     var href = links[i].href;
-                    if (href && href.indexOf('/org/') !== -1) {
+                    if (href && href.indexOf('/org/') !== -1 && href.indexOf('?') === -1) {
                         var match = href.match(/\\/org\\/([^/?]+)/);
                         if (match) {
                             result.push({
@@ -363,66 +341,82 @@ class YandexFixedParser:
                 org_id = item['id']
                 clean_url = item['url']
 
-                if org_id not in unique_ids:
-                    unique_ids.add(org_id)
-                    urls_by_id[org_id] = clean_url
+                # Only add if not seen in this category
+                if org_id not in seen_in_category:
+                    seen_in_category.add(org_id)
+                    unique_urls.append(clean_url)
                     new_count += 1
 
             if new_count > 0:
-                logger.info(f"  Found {len(unique_ids)} unique businesses (+{new_count})")
+                logger.info(f"  Found {len(unique_urls)} unique stores in this category (+{new_count})")
                 no_new_count = 0
             else:
                 no_new_count += 1
+                logger.info(f"  No new stores found ({no_new_count}/8)")
 
             scroll_count += 1
 
-        logger.info(f"  Total unique: {len(unique_ids)}")
-        return list(urls_by_id.values())
+            # Early exit if we've collected enough
+            if len(unique_urls) >= MAX_BUSINESSES:
+                break
+
+        logger.info(f"  Total unique URLs in {category}: {len(unique_urls)}")
+        return unique_urls
 
     def run(self):
         try:
             self.setup_driver()
 
+            total_collected = 0
+
             for idx, category in enumerate(self.categories, 1):
+                if total_collected >= MAX_BUSINESSES:
+                    logger.info(f"Reached maximum businesses ({MAX_BUSINESSES}), stopping...")
+                    break
+
                 logger.info(f"\n{'=' * 60}")
                 logger.info(f"[{idx}/{len(self.categories)}] {category.upper()}")
                 logger.info(f"{'=' * 60}")
 
                 try:
                     urls = self.search_and_collect_urls(category)
-                    logger.info(f"Found {len(urls)} unique business URLs")
+                    logger.info(f"Found {len(urls)} unique store URLs in {category}")
 
-                    for i, url in enumerate(urls, 1):
-                        if len(self.all_businesses) >= MAX_BUSINESSES:
+                    # Limit how many we process from this category
+                    urls_to_process = urls[:MAX_BUSINESSES - total_collected]
+
+                    for i, url in enumerate(urls_to_process, 1):
+                        if total_collected >= MAX_BUSINESSES:
                             break
 
-                        logger.info(f"  [{i}/{len(urls)}] Parsing...")
+                        logger.info(f"  [{i}/{len(urls_to_process)}] Parsing store...")
 
                         business = self.parse_business_page(url, category)
                         if business:
                             self.all_businesses.append(business)
-                            coords_str = f" [{business['latitude']:.6f}, {business['longitude']:.6f}]" if business[
-                                'latitude'] else ""
+                            total_collected += 1
 
+                            # Prepare info string for logging
                             info = []
                             if business.get('overall_rating'):
                                 info.append(f"⭐{business['overall_rating']}")
                             if business.get('ratings_count'):
                                 info.append(f"({business['ratings_count']} оценок)")
-                            if business.get('food_percent'):
-                                info.append(f"🍽️{business['food_percent']}%")
-                            if business.get('service_percent'):
-                                info.append(f"👨‍🍳{business['service_percent']}%")
+                            if business.get('is_24_7'):
+                                info.append(f"🕐24/7")
+                            elif business.get('working_hours'):
+                                info.append(f"🕐{business['working_hours'][:20]}")
 
-                            logger.info(
-                                f"    ✓ {business['name']}{coords_str} | {' '.join(info) if info else 'no ratings'}")
+                            logger.info(f"    ✓ {business['name']} | {' '.join(info) if info else 'no data'}")
                         else:
-                            logger.info(f"    ✗ Skipped")
+                            logger.info(f"    ✗ Skipped (duplicate or error)")
 
-                        time.sleep(random.uniform(1, 1.5))
+                        time.sleep(random.uniform(1.5, 2.5))
 
                 except Exception as e:
                     logger.error(f"Error processing {category}: {e}")
+                    import traceback
+                    traceback.print_exc()
                     continue
 
             # Save results
@@ -433,39 +427,48 @@ class YandexFixedParser:
                     "total_businesses": len(self.all_businesses),
                     "parsed_at": datetime.now().isoformat()
                 },
-                "businesses": self.all_businesses
+                "stores": self.all_businesses
             }
 
             with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
                 json.dump(output, f, ensure_ascii=False, indent=2)
 
-            # Summary
-            with_coords = sum(1 for b in self.all_businesses if b['latitude'])
-            with_overall = sum(1 for b in self.all_businesses if b.get('overall_rating'))
-            with_count = sum(1 for b in self.all_businesses if b.get('ratings_count'))
-            with_food = sum(1 for b in self.all_businesses if b.get('food_percent'))
-
+            # Summary statistics
             print("\n" + "=" * 70)
-            print("RESULTS FOR POWER BI")
+            print("STORES DATA COLLECTION SUMMARY")
             print("=" * 70)
-            print(f"Businesses: {len(self.all_businesses)}")
-            print(f"With coordinates: {with_coords}")
-            print(f"With overall rating: {with_overall}")
-            print(f"With ratings count: {with_count}")
-            print(f"With food percent: {with_food}")
-            print(f"\nOutput: {OUTPUT_FILE}")
+            print(f"Total stores: {len(self.all_businesses)}")
+            print(f"With coordinates: {sum(1 for b in self.all_businesses if b['latitude'])}")
+            print(f"With ratings: {sum(1 for b in self.all_businesses if b.get('overall_rating'))}")
+            print(f"With ratings count: {sum(1 for b in self.all_businesses if b.get('ratings_count'))}")
+            print(f"24/7 stores: {sum(1 for b in self.all_businesses if b.get('is_24_7'))}")
 
+            # Stats by category
+            print("\n📊 Stores by category:")
+            category_counts = {}
+            for b in self.all_businesses:
+                cat = b['category']
+                category_counts[cat] = category_counts.get(cat, 0) + 1
+            for cat, count in sorted(category_counts.items()):
+                print(f"  {cat}: {count}")
+
+            print(f"\nOutput file: {OUTPUT_FILE}")
+
+            # Show sample stores
             if self.all_businesses:
-                print("\n🏪 Sample businesses:")
+                print("\n🏪 SAMPLE STORES:")
                 for b in self.all_businesses[:5]:
                     print(f"\n  • {b['name']} ({b['category']})")
+                    if b.get('address'):
+                        print(f"    📍 {b['address']}")
                     if b.get('overall_rating'):
-                        print(f"    ⭐ Общий рейтинг: {b['overall_rating']} ({b.get('ratings_count', '?')} оценок)")
-                    if b.get('food_percent'): print(f"    🍽️ Еда: {b['food_percent']}%")
-                    if b.get('service_percent'): print(f"    👨‍🍳 Обслуживание: {b['service_percent']}%")
-                    if b.get('atmosphere_percent'): print(f"    🎭 Атмосфера: {b['atmosphere_percent']}%")
-                    if b.get('cleanliness_percent'): print(f"    🧹 Чистота: {b['cleanliness_percent']}%")
-                    if b.get('latitude'): print(f"    🗺️ {b['latitude']:.6f}, {b['longitude']:.6f}")
+                        print(f"    ⭐ Rating: {b['overall_rating']} ({b.get('ratings_count', 0)} reviews)")
+                    if b.get('is_24_7'):
+                        print(f"    🕐 24/7 (круглосуточно)")
+                    elif b.get('working_hours'):
+                        print(f"    🕐 Hours: {b['working_hours']}")
+                    if b.get('latitude'):
+                        print(f"    🗺️ Coordinates: {b['latitude']:.6f}, {b['longitude']:.6f}")
 
             print("\n" + "=" * 70)
 
@@ -480,14 +483,14 @@ class YandexFixedParser:
 
 if __name__ == "__main__":
     print("=" * 70)
-    print("Yandex Maps Parser - Fixed Power BI Edition")
+    print("Yandex Maps Store Parser")
     print("=" * 70)
     print(f"City: {CITY}")
     print(f"Categories: {', '.join(CATEGORIES)}")
-    print(f"Max businesses: {MAX_BUSINESSES}")
+    print(f"Max stores: {MAX_BUSINESSES}")
     print("=" * 70)
 
-    parser = YandexFixedParser(CITY, CATEGORIES, HEADLESS)
+    parser = YandexStoresParser(CITY, CATEGORIES, HEADLESS)
     parser.run()
 
-    print("\n✅ Done! Ready for Power BI.")
+    print("\n✅ Done! Store data saved.")
