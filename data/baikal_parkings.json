@@ -1,0 +1,134 @@
+{
+  "city": "Байкальск",
+  "search_radius_km": 15,
+  "total": 21,
+  "parkings": [
+    {
+      "name": "Автомобильная парковка",
+      "url": "https://yandex.ru/maps/org/avtomobilnaya_parkovka/34561822881/?ll=104.144758%2C51.509958&z=17",
+      "latitude": 51.509958,
+      "longitude": 104.144758
+    },
+    {
+      "name": "Автомобильная парковка",
+      "url": "https://yandex.ru/maps/org/avtomobilnaya_parkovka/29923844181/?ll=104.117643%2C51.501700&z=15",
+      "latitude": 51.5017,
+      "longitude": 104.117643
+    },
+    {
+      "name": "Автомобильная парковка",
+      "url": "https://yandex.ru/maps/org/avtomobilnaya_parkovka/21651281785/?ll=104.138500%2C51.523210&z=15",
+      "latitude": 51.52321,
+      "longitude": 104.1385
+    },
+    {
+      "name": "Автомобильная парковка",
+      "url": "https://yandex.ru/maps/org/avtomobilnaya_parkovka/239320344678/?ll=104.140905%2C51.512164&z=16",
+      "latitude": 51.512164,
+      "longitude": 104.140905
+    },
+    {
+      "name": "Автомобильная парковка",
+      "url": "https://yandex.ru/maps/org/avtomobilnaya_parkovka/236706502096/?ll=104.150234%2C51.519044&z=15",
+      "latitude": 51.519044,
+      "longitude": 104.150234
+    },
+    {
+      "name": "Автомобильная парковка",
+      "url": "https://yandex.ru/maps/org/avtomobilnaya_parkovka/110327796062/?ll=104.152327%2C51.523291&z=17",
+      "latitude": 51.523291,
+      "longitude": 104.152327
+    },
+    {
+      "name": "Автомобильная парковка",
+      "url": "https://yandex.ru/maps/org/avtomobilnaya_parkovka/79574131256/?ll=104.125441%2C51.505331&z=13",
+      "latitude": 51.505331,
+      "longitude": 104.125441
+    },
+    {
+      "name": "Автомобильная парковка",
+      "url": "https://yandex.ru/maps/org/avtomobilnaya_parkovka/14173384388/?ll=104.149569%2C51.520747&z=17",
+      "latitude": 51.520747,
+      "longitude": 104.149569
+    },
+    {
+      "name": "Автомобильная парковка",
+      "url": "https://yandex.ru/maps/org/avtomobilnaya_parkovka/197080549233/?ll=104.150234%2C51.519044&z=15",
+      "latitude": 51.519044,
+      "longitude": 104.150234
+    },
+    {
+      "name": "Автомобильная парковка",
+      "url": "https://yandex.ru/maps/org/avtomobilnaya_parkovka/43241034898/?ll=104.117643%2C51.505896&z=14",
+      "latitude": 51.505896,
+      "longitude": 104.117643
+    },
+    {
+      "name": "Автомобильная парковка",
+      "url": "https://yandex.ru/maps/org/avtomobilnaya_parkovka/130555898058/?ll=104.150584%2C51.523359&z=17",
+      "latitude": 51.523359,
+      "longitude": 104.150584
+    },
+    {
+      "name": "Автомобильная парковка",
+      "url": "https://yandex.ru/maps/org/avtomobilnaya_parkovka/200810501833/?ll=104.149216%2C51.522415&z=18",
+      "latitude": 51.522415,
+      "longitude": 104.149216
+    },
+    {
+      "name": "Автомобильная парковка",
+      "url": "https://yandex.ru/maps/org/avtomobilnaya_parkovka/60090111284/?ll=104.117643%2C51.501700&z=15",
+      "latitude": 51.5017,
+      "longitude": 104.117643
+    },
+    {
+      "name": "Автомобильная парковка",
+      "url": "https://yandex.ru/maps/org/avtomobilnaya_parkovka/12388460215/?ll=104.145904%2C51.504826&z=16",
+      "latitude": 51.504826,
+      "longitude": 104.145904
+    },
+    {
+      "name": "Автомобильная парковка",
+      "url": "https://yandex.ru/maps/org/avtomobilnaya_parkovka/137247354582/?ll=104.150234%2C51.519044&z=15",
+      "latitude": 51.519044,
+      "longitude": 104.150234
+    },
+    {
+      "name": "Автомобильная парковка",
+      "url": "https://yandex.ru/maps/org/avtomobilnaya_parkovka/207490350960/?ll=104.098559%2C51.523444&z=16",
+      "latitude": 51.523444,
+      "longitude": 104.098559
+    },
+    {
+      "name": "Автомобильная парковка",
+      "url": "https://yandex.ru/maps/org/avtomobilnaya_parkovka/229464479136/?ll=104.144929%2C51.509958&z=17",
+      "latitude": 51.509958,
+      "longitude": 104.144929
+    },
+    {
+      "name": "Автомобильная парковка",
+      "url": "https://yandex.ru/maps/org/avtomobilnaya_parkovka/109797174793/?ll=104.117643%2C51.501742&z=15",
+      "latitude": 51.501742,
+      "longitude": 104.117643
+    },
+    {
+      "name": "Автомобильная парковка",
+      "url": "https://yandex.ru/maps/org/avtomobilnaya_parkovka/185113111004/?ll=104.152884%2C51.522647&z=17",
+      "latitude": 51.522647,
+      "longitude": 104.152884
+    },
+    {
+      "name": "Автомобильная парковка",
+      "url": "https://yandex.ru/maps/org/avtomobilnaya_parkovka/138967413663/?ll=104.149201%2C51.527500&z=17",
+      "latitude": 51.5275,
+      "longitude": 104.149201
+    },
+    {
+      "name": "Автомобильная парковка",
+      "url": "https://yandex.ru/maps/org/avtomobilnaya_parkovka/58922987262/?ll=104.117643%2C51.501802&z=15",
+      "latitude": 51.501802,
+      "longitude": 104.117643
+    }
+  ],
+  "parsed_at": "2026-05-04T14:25:01.447505"
+}

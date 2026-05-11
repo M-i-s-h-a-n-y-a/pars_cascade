@@ -1,0 +1,38 @@
+{
+  "city": "Байкальск",
+  "search_radius_km": 15,
+  "total": 5,
+  "viewpoints": [
+    {
+      "name": "Горная вершина",
+      "url": "https://yandex.ru/maps/org/gornaya_vershina/123201595747/?ll=104.109789%2C51.494549&z=17",
+      "latitude": 51.494549,
+      "longitude": 104.109789
+    },
+    {
+      "name": "Обзорка Закатная",
+      "url": "https://yandex.ru/maps/org/obzorka_zakatnaya/119049043733/?ll=104.170432%2C51.527636&z=18",
+      "latitude": 51.527636,
+      "longitude": 104.170432
+    },
+    {
+      "name": "Смотровая площадка",
+      "url": "https://yandex.ru/maps/org/smotrovaya_ploshchadka/219043421121/?ll=104.116103%2C51.504507&z=15",
+      "latitude": 51.504507,
+      "longitude": 104.116103
+    },
+    {
+      "name": "Смотровая площадка",
+      "url": "https://yandex.ru/maps/org/smotrovaya_ploshchadka/67849179067/?ll=104.162372%2C51.526494&z=16",
+      "latitude": 51.526494,
+      "longitude": 104.162372
+    },
+    {
+      "name": "Смотровая площадка",
+      "url": "https://yandex.ru/maps/org/smotrovaya_ploshchadka/173826718495/?ll=104.135609%2C51.509237&z=13",
+      "latitude": 51.509237,
+      "longitude": 104.135609
+    }
+  ],
+  "parsed_at": "2026-05-04T20:48:03.648246"
+}

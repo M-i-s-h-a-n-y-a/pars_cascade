@@ -1,0 +1,290 @@
+{
+  "city": "Байкальск",
+  "search_radius_km": 15,
+  "total": 47,
+  "stops": [
+    {
+      "name": "Почта (нет посадки)",
+      "url": "https://yandex.ru/maps/org/37713828103/",
+      "latitude": 51.522985,
+      "longitude": 104.153396
+    },
+    {
+      "name": "Пост ДПС",
+      "url": "https://yandex.ru/maps/org/93852548303/",
+      "latitude": 51.515798,
+      "longitude": 104.137681
+    },
+    {
+      "name": "Утулик – кафе Полина",
+      "url": "https://yandex.ru/maps/org/232640120596/",
+      "latitude": 51.537119,
+      "longitude": 104.055252
+    },
+    {
+      "name": "Площадь Юбилейная",
+      "url": "https://yandex.ru/maps/org/4840745614/",
+      "latitude": 51.509234,
+      "longitude": 104.14168
+    },
+    {
+      "name": "Байкальск - ТЦ Бриз",
+      "url": "https://yandex.ru/maps/org/75980278103/",
+      "latitude": 51.523309,
+      "longitude": 104.150335
+    },
+    {
+      "name": "Промплощадка",
+      "url": "https://yandex.ru/maps/org/16205222727/",
+      "latitude": 51.50791,
+      "longitude": 104.178272
+    },
+    {
+      "name": "БЦБК",
+      "url": "https://yandex.ru/maps/org/84204280276/",
+      "latitude": 51.523585,
+      "longitude": 104.173083
+    },
+    {
+      "name": "Пост ДПС",
+      "url": "https://yandex.ru/maps/org/24774248448/",
+      "latitude": 51.515594,
+      "longitude": 104.137561
+    },
+    {
+      "name": "Платформа Байкальск",
+      "url": "https://yandex.ru/maps/org/197613953011/",
+      "latitude": 51.51413,
+      "longitude": 104.140462
+    },
+    {
+      "name": "Почта",
+      "url": "https://yandex.ru/maps/org/141568054795/",
+      "latitude": 51.523179,
+      "longitude": 104.153954
+    },
+    {
+      "name": "Сады Горный",
+      "url": "https://yandex.ru/maps/org/105548518276/",
+      "latitude": 51.522652,
+      "longitude": 104.101058
+    },
+    {
+      "name": "Красный Ключ",
+      "url": "https://yandex.ru/maps/org/160929127918/",
+      "latitude": 51.518864,
+      "longitude": 104.124793
+    },
+    {
+      "name": "Общежития",
+      "url": "https://yandex.ru/maps/org/6419468218/",
+      "latitude": 51.523455,
+      "longitude": 104.140071
+    },
+    {
+      "name": "Сангород",
+      "url": "https://yandex.ru/maps/org/214217195977/",
+      "latitude": 51.513138,
+      "longitude": 104.121979
+    },
+    {
+      "name": "Байкальск – Ракета",
+      "url": "https://yandex.ru/maps/org/152580418808/",
+      "latitude": 51.51211,
+      "longitude": 104.144274
+    },
+    {
+      "name": "Речная улица (нет посадки)",
+      "url": "https://yandex.ru/maps/org/138732587826/",
+      "latitude": 51.522049,
+      "longitude": 104.140462
+    },
+    {
+      "name": "Автостанция Байкальск",
+      "url": "https://yandex.ru/maps/org/105311186348/",
+      "latitude": 51.520347,
+      "longitude": 104.133033
+    },
+    {
+      "name": "Байкальск-Пригородный",
+      "url": "https://yandex.ru/maps/org/112644311689/",
+      "latitude": 51.516603,
+      "longitude": 104.141376
+    },
+    {
+      "name": "Сады Солзан",
+      "url": "https://yandex.ru/maps/org/151621427870/",
+      "latitude": 51.498966,
+      "longitude": 104.20954
+    },
+    {
+      "name": "Автостанция Байкальск",
+      "url": "https://yandex.ru/maps/org/85089384979/",
+      "latitude": 51.520384,
+      "longitude": 104.132807
+    },
+    {
+      "name": "Красный Ключ",
+      "url": "https://yandex.ru/maps/org/27856755197/",
+      "latitude": 51.51865,
+      "longitude": 104.12507
+    },
+    {
+      "name": "Очистные",
+      "url": "https://yandex.ru/maps/org/235582379854/",
+      "latitude": 51.515434,
+      "longitude": 104.18728
+    },
+    {
+      "name": "Платформа Байкальск",
+      "url": "https://yandex.ru/maps/org/148932002881/",
+      "latitude": 51.513811,
+      "longitude": 104.14146
+    },
+    {
+      "name": "Железнодорожный вокзал",
+      "url": "https://yandex.ru/maps/org/1180642025/",
+      "latitude": 51.499674,
+      "longitude": 104.229618
+    },
+    {
+      "name": "Бабха",
+      "url": "https://yandex.ru/maps/org/32428654539/",
+      "latitude": 51.53374,
+      "longitude": 104.087668
+    },
+    {
+      "name": "Сады Горный",
+      "url": "https://yandex.ru/maps/org/129501137206/",
+      "latitude": 51.52252,
+      "longitude": 104.101047
+    },
+    {
+      "name": "Общежития",
+      "url": "https://yandex.ru/maps/org/193811754698/",
+      "latitude": 51.523288,
+      "longitude": 104.139773
+    },
+    {
+      "name": "Магазин Маяк",
+      "url": "https://yandex.ru/maps/org/115457270642/",
+      "latitude": 51.519543,
+      "longitude": 104.139166
+    },
+    {
+      "name": "Бабха",
+      "url": "https://yandex.ru/maps/org/190245164962/",
+      "latitude": 51.524447,
+      "longitude": 104.094962
+    },
+    {
+      "name": "Сады Строитель",
+      "url": "https://yandex.ru/maps/org/65148348359/",
+      "latitude": 51.51899,
+      "longitude": 104.11246
+    },
+    {
+      "name": "БЦБК",
+      "url": "https://yandex.ru/maps/org/147535378563/",
+      "latitude": 51.509744,
+      "longitude": 104.157488
+    },
+    {
+      "name": "Байкальск",
+      "url": "https://yandex.ru/maps/org/104389878246/",
+      "latitude": 51.500038,
+      "longitude": 104.226781
+    },
+    {
+      "name": "Платформа № 2",
+      "url": "https://yandex.ru/maps/org/9757234417/",
+      "latitude": 51.515636,
+      "longitude": 104.142226
+    },
+    {
+      "name": "Магазин Маяк",
+      "url": "https://yandex.ru/maps/org/230749358514/",
+      "latitude": 51.51936,
+      "longitude": 104.139296
+    },
+    {
+      "name": "Железнодорожный вокзал",
+      "url": "https://yandex.ru/maps/org/4026481662/",
+      "latitude": 51.542518,
+      "longitude": 104.056931
+    },
+    {
+      "name": "Спорткомплекс",
+      "url": "https://yandex.ru/maps/org/59629011313/",
+      "latitude": 51.522929,
+      "longitude": 104.14791
+    },
+    {
+      "name": "Платформа № 1",
+      "url": "https://yandex.ru/maps/org/66987230009/",
+      "latitude": 51.51577,
+      "longitude": 104.142316
+    },
+    {
+      "name": "МЖК",
+      "url": "https://yandex.ru/maps/org/225583150383/",
+      "latitude": 51.523606,
+      "longitude": 104.134489
+    },
+    {
+      "name": "Речная улица",
+      "url": "https://yandex.ru/maps/org/146270235293/",
+      "latitude": 51.52218,
+      "longitude": 104.140167
+    },
+    {
+      "name": "Сады Строитель",
+      "url": "https://yandex.ru/maps/org/116907930933/",
+      "latitude": 51.519212,
+      "longitude": 104.11261
+    },
+    {
+      "name": "Утулик",
+      "url": "https://yandex.ru/maps/org/114788333423/",
+      "latitude": 51.541749,
+      "longitude": 104.058044
+    },
+    {
+      "name": "Байкальск – Ракета",
+      "url": "https://yandex.ru/maps/org/82380950933/",
+      "latitude": 51.512171,
+      "longitude": 104.144598
+    },
+    {
+      "name": "Сады Солзан",
+      "url": "https://yandex.ru/maps/org/170043222706/",
+      "latitude": 51.498419,
+      "longitude": 104.211909
+    },
+    {
+      "name": "Спорткомплекс",
+      "url": "https://yandex.ru/maps/org/57553303750/",
+      "latitude": 51.523105,
+      "longitude": 104.146579
+    },
+    {
+      "name": "Бабха",
+      "url": "https://yandex.ru/maps/org/35682990692/",
+      "latitude": 51.524679,
+      "longitude": 104.094769
+    },
+    {
+      "name": "Ореховая Падь",
+      "url": "https://yandex.ru/maps/org/54294954370/",
+      "latitude": 51.560304,
+      "longitude": 104.001201
+    },
+    {
+      "name": "МЖК",
+      "url": "https://yandex.ru/maps/org/236276605565/",
+      "latitude": 51.523786,
+      "longitude": 104.134361
+    }
+  ],
+  "parsed_at": "2026-05-04T20:47:06.230426"
+}
