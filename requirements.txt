@@ -1,0 +1,14 @@
+streamlit>=1.36.0
+pandas
+geopandas
+folium
+streamlit-folium
+numpy
+scipy
+matplotlib
+plotly
+rasterio
+Pillow
+shapely
+osmnx>=1.6.0
+networkx
